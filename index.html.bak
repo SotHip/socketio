@@ -1,0 +1,448 @@
+s<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css"/>
+    <title>Chat</title>
+</head>
+<body>
+    <div id="loginForm">
+        <h3>YOUR LOGIN ACCOUNT</h3>
+        <input type="text" placeholder="Type name ..." class="form-control" id="txtUsername" style="background-color: transparent;">
+        <button id="btn-register" type="submit" class="btn btn-primary">Login</button>
+    </div>
+
+    <div id="container" style="margin: 0px 100px 0px 100px;">
+        <div id="header">
+            <nav class="navbar navbar-expand-lg navbar-light bg-light">
+                <div class="container-fluid">
+                <a class="navbar-brand" href="/">AppChat</a>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarText" aria-controls="navbarText" aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <div class="collapse navbar-collapse" id="navbarText">
+                    <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                        <li class="nav-item">
+                            <a class="nav-link active" aria-current="page" href="/">Home</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="#" id="btnContact">Contact</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="#" id="btnInfor">Information</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="#" id="btnSwitchChatGroup">Chat group</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="#" id="btnSwitchChatPrivate">Chat riêng</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="#" id="currentUser"></a>
+                        </li>
+                        <li class="nav-item">
+                            <a id="btn-logout" class="nav-link" href="#">Logout</a>
+                        </li>
+                    </ul>
+                </div>
+                </div>
+            </nav>
+        </div>
+
+        <div id="chat-private">
+            <section style="background-color: #fccb90;background: -webkit-linear-gradient(to bottom right, rgba(252, 203, 144, 1), rgba(213, 126, 235, 1));background: linear-gradient(to bottom right, rgba(252, 203, 144, 1), rgba(213, 126, 235, 1));">
+                <div class="container py-5">
+                    <div class="row">
+                        <div class="col-md-6 col-lg-5 col-xl-4 mb-4 mb-md-0">
+                            <h5 class="font-weight-bold mb-3 text-center text-lg-start">Online</h5>
+                            <div id="mask-custom" class="card">
+                                <div class="card-body">
+                                    <ul id="list-online" class="list-unstyled mb-0" style="height: 600px;overflow: auto;">
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6 col-lg-7 col-xl-8">
+                            <ul id="chat-list-private"class="list-unstyled" style="width: 100%; height: 560px;overflow: auto;">
+                                
+                            </ul>
+                            <div id="form-chat-private" style="height: 40px;">
+                                <div id="notification-private" style="color: gray;">Someone is typing...</div>
+                                <div class="form-outline">
+                                    <textarea class="form-control" id="chat-mes-private" rows="4" placeholder="Type message........."></textarea>
+                                </div>
+                                <button type="button" class="btn btn-info btn-rounded float-end" id="btnSendPrivate">Send</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </div>
+
+        <div id="chat-group">
+            <section style="background-color: #eee;">
+                <div class="container py-5">
+                <div class="row d-flex justify-content-center">
+                    <div class="col-md-8 col-lg-6 col-xl-4">
+                    <div class="card">
+                        <div class="card-header d-flex justify-content-between align-items-center p-3"
+                            style="border-top: 4px solid #ffa900;">
+                            <h5 id="header-message-group" class="mb-0">Chat messages</h5>
+                        </div>
+                        <ul id="chat-list-group" class="card-body" data-mdb-perfect-scrollbar="true" style="position: relative; height: 350px;overflow: auto;">
+                            
+                        </ul>
+                        <div class="card-footer text-muted d-flex justify-content-start align-items-center p-3">
+                        <div class="input-group mb-0">
+                            <div id="notification-group" style="color: gray;">Someone is typing...</div>
+                            <input id="chat-mes-group" type="text" class="form-control" placeholder="Type message...."
+                                aria-label="Recipient's username" aria-describedby="button-addon2" />
+                            <button class="btn btn-warning" type="button" id="btnSendGroup" style="padding-top: .55rem;">Send</button>
+                        </div>
+                        </div>
+                    </div>
+                    </div>
+                </div>
+                </div>
+            </section>
+        </div>
+    </div>
+</body>
+</html>
+<!-- script socket -->
+<script src="https://sothip.herokuapp.com/socket.io/socket.io.js"></script>
+<script>
+    // call server
+    const socket = io("https://sothip.herokuapp.com");
+
+    var strCurrentUser = '';
+    var listUserTyping = [];
+    var usernameChat = '';
+    var socketidChat = '';
+    
+    const container = document.querySelector('#container');
+    
+    const currentUser = document.querySelector('#currentUser');
+    const contentChat = document.querySelector('#content-chat');
+    const fragmentLogin = document.querySelector('#loginForm');
+    const designChatGroup = document.querySelector('#chat-group');
+    const designChatPrivate = document.querySelector('#chat-private');
+    designChatGroup.style.display = 'none';
+    designChatPrivate.style.display = 'none';
+    container.style.display='none';
+    fragmentLogin.style.display = 'block';
+
+    const formChatPrivate = document.querySelector('#form-chat-private');
+    const btnSendPrivate = document.querySelector('#btnSendPrivate');
+    const chatListPrivate = document.querySelector('#chat-list-private');
+    const chatMesPrivatge = document.querySelector('#chat-mes-private');
+    const notificationPrivate = document.querySelector('#notification-private');
+    notificationPrivate.style.display='none';
+    formChatPrivate.style.display = 'none';
+
+    const btnSendGroup = document.querySelector('#btnSendGroup');
+    const chatListGroup = document.querySelector('#chat-list-group');
+    const chatMesGroup = document.querySelector('#chat-mes-group');
+    const notificationGroup = document.querySelector('#notification-group');
+    notificationGroup.style.display='none';
+
+    function showItemPrivate(userChat, message)
+    {
+        var str = '';
+        var now = new Date();
+        const time = now.getFullYear().toString() + "/" +
+                (now.getMonth() + 1).toString() +
+                "/" + now.getDate() + " " + now.getHours() +
+                ":" + now.getMinutes() + ":" + now.getSeconds();
+        if (strCurrentUser !== userChat) {
+            str += `<img src="https://mdbcdn.b-cdn.net/img/Photos/Avatars/avatar-6.webp" alt="avatar"`;
+            str += `class="rounded-circle d-flex align-self-start me-3 shadow-1-strong" width="60">`;
+            str += `<div id="mask-custom-chat" class="card w-100">`;
+            str += `<div class="card-header d-flex justify-content-between p-3">`;
+            str += `<p class="fw-bold mb-0">${userChat}</p>`;
+            str += `<p class="text-muted small mb-0"><i class="far fa-clock"></i> ${time}</p>`;
+            str += `</div>`;
+            str += `<div class="card-body">`;
+            str += `<p class="mb-0">${message}</p>`;
+            str += `</div>`;
+            str += `</div>`;
+        } else {
+            str += `<div id="mask-custom-chat" class="card w-100">`;
+            str += `<div class="card-header d-flex justify-content-between p-3">`;
+            str += `<p class="fw-bold mb-0">${userChat}</p>`;
+            str += `<p class="text-muted small mb-0"><i class="far fa-clock"></i> ${time}</p>`;
+            str += `</div>`;
+            str += `<div class="card-body">`;
+            str += `<p class="mb-0">${message}</p>`;
+            str += `</div>`;
+            str += `</div>`;
+            str += `<img src="https://mdbcdn.b-cdn.net/img/Photos/Avatars/avatar-5.webp" alt="avatar"`;
+            str += `class="rounded-circle d-flex align-self-start ms-3 shadow-1-strong" width="60">`;
+        }
+
+        return str;
+    }
+
+    function showItemGroup(userChat, message)
+    {
+        var str = '';
+        var now = new Date();
+        const time = now.getFullYear().toString() + "/" +
+                (now.getMonth() + 1).toString() +
+                "/" + now.getDate() + " " + now.getHours() +
+                ":" + now.getMinutes() + ":" + now.getSeconds();
+        if (strCurrentUser !== userChat) {
+            str += `<div class="d-flex justify-content-between">`;
+            str += `<p class="small mb-1">${userChat}</p>`;
+            str += `<p class="small mb-1 text-muted">${time}</p>`;
+            str += `</div>`;
+            str += `<div class="d-flex flex-row justify-content-start">`;
+            str += `<img src="https://mdbcdn.b-cdn.net/img/Photos/new-templates/bootstrap-chat/ava5-bg.webp"`;
+            str += `alt="avatar 1" style="width: 45px; height: 100%;">`;
+            str += `<div>`;
+            str += `<p class="small p-2 ms-3 mb-3 rounded-3" style="background-color: #f5f6f7;">${message}</p>`;
+            str += `</div>`;
+            str += `</div>`;
+        } else {
+            str += `<div class="d-flex justify-content-between">`;
+            str += `<p class="small mb-1 text-muted">${time}</p>`;
+            str += `<p class="small mb-1">${userChat}</p>`;
+            str += `</div>`;
+            str += `<div class="d-flex flex-row justify-content-end mb-4 pt-1">`;
+            str += `<div>`;
+            str += `<p class="small p-2 me-3 mb-3 text-white rounded-3 bg-warning">${message}</p>`;
+            str += `</div>`;
+            str += `<img src="https://mdbcdn.b-cdn.net/img/Photos/new-templates/bootstrap-chat/ava6-bg.webp"`;
+            str += `alt="avatar 1" style="width: 45px; height: 100%;">`;
+            str += `</div>`;
+        }
+
+        return str;
+    }
+    
+    // login
+    const btnRegister = document.querySelector('#btn-register');
+    btnRegister.addEventListener('click',function(e){
+        const userName = document.querySelector('#txtUsername');
+        if (userName.value !== '') {
+            socket.emit('client-register-username',userName.value);
+        }
+    });
+    socket.on('server-send-register-fail',function(){
+        alert('Tài khoản này đã có người sử dụng !');
+    });
+
+    socket.on('server-send-register-success',function(data){
+        currentUser.textContent = `Xin chào ${data}`;
+        strCurrentUser = data;
+        container.style.display='block';
+        fragmentLogin.style.display = 'none';
+    });
+
+    socket.on('server-send-list-user',function(data){
+        const listOnline = document.querySelector('#list-online');
+        const headerMessageGroup = document.querySelector('#header-message-group');
+        listOnline.innerHTML = '';
+        var str = '';
+        var strHeaderMessageGroup = '';
+        for(let i = 0;i < data.length;i++)
+        {
+            if (data[i].username != strCurrentUser){
+                str += `<li class="p-2 border-bottom" style="background-color: #eee;">`;
+                str += `<a socketid=${data[i].socketid} username=${data[i].username} ondblclick="dbClickUser(this)" href="#" class="d-flex justify-content-between">`;
+                str += `<div class="d-flex flex-row">`;
+                str += `<img src="https://mdbcdn.b-cdn.net/img/Photos/Avatars/avatar-8.webp" alt="avatar"`;
+                str += `class="rounded-circle d-flex align-self-center me-3 shadow-1-strong" width="60">`;
+                str += `<div class="pt-1">`;
+                str += `<p class="fw-bold mb-0">${data[i].username}</p>`;
+                str += `<p class="small text-muted">Đang hoạt động</p>`;
+                str += `</div>`;
+                str += `</div>`;
+                str += `<div class="pt-1">`;
+                str += `<p class="small text-muted mb-1">Just now</p>`;
+                str += `<div id="icon-active"></div>`;
+                str += `</div>`;
+                str += `</a>`;
+                str += `</li>`;
+            }
+            strHeaderMessageGroup += `${data[i].username},`;
+        }
+        strHeaderMessageGroup = strHeaderMessageGroup.substring(0,strHeaderMessageGroup.lastIndexOf(','));
+
+        listUserTyping = listUserTyping.filter(function(item, index) {
+            return item === strCurrentUser;
+        });
+
+        headerMessageGroup.textContent = strHeaderMessageGroup;
+        listOnline.innerHTML = str;
+    });
+
+    // chat
+    btnSendGroup.addEventListener('click',function(e){
+        const message = chatMesGroup.value
+        if (message.trim() !== '') {
+            socket.emit('on-chat',{message: message});
+            chatMesGroup.value='';
+        }
+    });
+
+    socket.on('user-chat',(data)=>{
+        const chatItem = document.createElement('li');
+        chatItem.classList.add('noneStyleLi');
+        const itemMessage = showItemGroup(data.username, data.message);
+        chatItem.innerHTML = itemMessage;
+        chatListGroup.appendChild(chatItem);
+        chatListGroup.scrollTop = chatListGroup.scrollHeight;
+    });
+
+    // logout
+    const btnLogout = document.querySelector('#btn-logout');
+    btnLogout.addEventListener('click',function(e){
+        e.preventDefault();
+        socket.emit('logout');
+        container.style.display='none';
+        fragmentLogin.style.display = 'block';
+    });
+
+    chatMesGroup.addEventListener('focus',function(e){
+        socket.emit('typing',strCurrentUser);
+    });
+    
+    socket.on('typing',function(data){
+        var str ='';
+        if (listUserTyping.indexOf(data) < 0) {
+            listUserTyping.push(data);
+        }
+
+        for(var i =0;i<listUserTyping.length;i++){
+            str += `${listUserTyping[i]},`
+        }
+        str = str.substring(0,str.lastIndexOf(','));
+        str += ' is typing...'
+
+        if (listUserTyping.length > 0) {
+            notificationGroup.textContent = str;
+            notificationGroup.style.display='block';
+        }
+    });
+
+    chatMesGroup.addEventListener('focusout',function(e){
+        socket.emit('stop-typing',strCurrentUser);
+    });
+
+    socket.on('stop-typing',function(data){
+        if (listUserTyping.indexOf(data) >= 0) {
+            listUserTyping = listUserTyping.filter(function(item, index){
+                return item === data;
+            });
+        }
+        notificationGroup.style.display='none';
+    });
+
+    // Chat user private
+    function dbClickUser(e) {
+        formChatPrivate.style.display = 'block';
+
+        socket.emit('tease',{socketid: e.getAttribute("socketid"), username: e.getAttribute("username")});
+        
+        chatListPrivate.textContent = '';
+
+        usernameChat = e.getAttribute("username");
+        socketidChat = e.getAttribute("socketid");
+
+        alert("Kết nối thành công");
+    }
+
+    socket.on('tease',function(data){
+        alert(`${data} đang kết nối với bạn`);
+        formChatPrivate.style.display = 'block';
+    });
+
+    btnSendPrivate.addEventListener('click',function(e){
+        const message = chatMesPrivatge.value;
+        if (message.trim() !== '') {
+            socket.emit('on-chat-private',{username: strCurrentUser, socketid: socketidChat, message: message});
+            chatMesPrivatge.value='';
+        }
+    });
+    
+    socket.on('user-chat-private',(data)=>{
+        socketidChat = data.socketid;
+        const chatItem = document.createElement('li');
+        chatItem.classList.add("d-flex");
+        chatItem.classList.add("justify-content-between");
+        chatItem.classList.add("mb-4");
+        const itemMessage = showItemPrivate(data.username, data.message);
+        chatItem.innerHTML = itemMessage;
+        chatListPrivate.appendChild(chatItem);
+        chatListPrivate.scrollTop = chatListPrivate.scrollHeight;
+    });
+
+    chatMesPrivatge.addEventListener('focus',function(){
+        socket.emit('typing-private',{username: strCurrentUser, socketid: socketidChat});
+    });
+
+    socket.on('typing-private',function(data){
+        var str = `${data.username} is typing...`;
+        notificationPrivate.textContent = str;
+        notificationPrivate.style.display='block';
+    });
+
+    chatMesPrivatge.addEventListener('focusout',function(){
+        socket.emit('stop-typing-private',{username: strCurrentUser, socketid: socketidChat});
+    });
+
+    socket.on('stop-typing-private',function(data){
+        notificationPrivate.style.display='none';
+    });
+
+    const btnContact = document.querySelector('#btnContact');
+    btnContact.addEventListener('click', function(e) {
+        alert("Liên hệ qua facebook...");
+    });
+
+    const btnInfor = document.querySelector('#btnInfor');
+    btnInfor.addEventListener('click', function(e) {
+        alert("Ngày tạo app 2022/09/20");
+    });
+
+    const btnSwitchChatGroup = document.querySelector('#btnSwitchChatGroup');
+    btnSwitchChatGroup.addEventListener('click', function(e) {
+        designChatGroup.style.display = 'block';
+        designChatPrivate.style.display = 'none';
+    });
+
+    const btnSwitchChatPrivate = document.querySelector('#btnSwitchChatPrivate');
+    btnSwitchChatPrivate.addEventListener('click', function(e) {
+        designChatGroup.style.display = 'none';
+        designChatPrivate.style.display = 'block';
+    });
+
+</script>
+
+<style>
+    #icon-active {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        border: 1px solid green;
+        background-color: green;
+    }
+
+    .noneStyleLi {
+        margin-top: 10px;
+        list-style: none;
+    }
+
+    #mask-custom, #mask-custom-chat {
+        background: rgba(24, 24, 16, .2);
+        border-radius: 2em;
+        backdrop-filter: blur(15px);
+        border: 2px solid rgba(255, 255, 255, 0.05);
+        background-clip: padding-box;
+        box-shadow: 10px 10px 10px rgba(46, 54, 68, 0.03);
+    }
+</style>
